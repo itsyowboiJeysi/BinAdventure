@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Bin Adventure</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="hud">
+      <div id="fragmentCount">✦ 0 / 5</div>
+      <div id="meowPrompt" style="display:none;">Press Q to Meow</div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+      <div id="startScreen" class="overlay">
+        <div class="start-content">
+          <h1 class="game-title">Bin Adventure</h1>
+          <p class="subtitle">A story about finding your way home</p>
+          <button id="startBtn" class="game-btn">Begin Journey</button>
+        </div>
+      </div>
+      <div id="dialogueBox" class="dialogue-container" style="display:none;">
+        <div class="dialogue-text" id="dialogueText"></div>
+        <div class="dialogue-prompt" id="dialoguePrompt">Press E or tap to continue</div>
+      </div>
+      <div id="letterOverlay" class="overlay" style="display:none;">
+        <div class="letter-content">
+          <div class="letter-header">A Letter for Merrylou</div>
+          <div class="letter-body" id="letterBody"></div>
+          <button id="closeLetterBtn" class="game-btn">Close</button>
+        </div>
+      </div>
+      <div id="interactPrompt" style="display:none;">Press E to interact</div>
+      <div id="mobileControls" style="display:none;">
+        <div class="mobile-left">
+          <button id="btnLeft" class="mobile-btn">◀</button>
+          <button id="btnRight" class="mobile-btn">▶</button>
+        </div>
+        <div class="mobile-right">
+          <button id="btnJump" class="mobile-btn jump-btn">▲</button>
+          <button id="btnInteract" class="mobile-btn interact-btn">E</button>
+          <button id="btnMeow" class="mobile-btn meow-btn">🐱</button>
+        </div>
+      </div>
+      <div id="reunionOverlay" class="overlay" style="display:none;">
+        <div class="reunion-content">
+          <div id="reunionText" class="reunion-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="GameObject.js"></script>
+  <script src="Bin.js"></script>
+  <script src="Merry.js"></script>
+  <script src="Platform.js"></script>
+  <script src="MemorySpot.js"></script>
+  <script src="Fragment.js"></script>
+  <script src="Lamp.js"></script>
+  <script src="Game.js"></script>
+  <script>
+    const game = new Game(document.getElementById('gameCanvas'));
+    window.game = game;
+    game.start();
+  </script>
+</body>
+</html>

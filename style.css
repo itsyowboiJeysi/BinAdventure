@@ -1,0 +1,309 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { width: 100%; height: 100%; overflow: hidden; background: #0a0a12; font-family: 'Georgia', serif; }
+
+#gameContainer {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a12;
+  position: relative;
+}
+
+#hud {
+  grid-row: 1;
+  padding: 8px 16px;
+  z-index: 30;
+  background: rgba(10, 10, 18, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#gameCanvas {
+  grid-row: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+#ui-layer > * { pointer-events: auto; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#startScreen {
+  background: rgba(10, 10, 18, 0.95);
+  flex-direction: column;
+}
+
+#startBtn {
+  display: inline-block;
+}
+
+.start-content {
+  text-align: center;
+  animation: fadeIn 2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.game-title {
+  font-size: 3rem;
+  color: #f4d9a0;
+  text-shadow: 0 0 30px rgba(244, 217, 160, 0.5);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.2em;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #8899aa;
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+.game-btn {
+  background: linear-gradient(135deg, #3a2a1a, #5a3a2a);
+  color: #f4d9a0;
+  border: 2px solid #f4d9a066;
+  padding: 12px 36px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-family: 'Georgia', serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(244, 217, 160, 0.3);
+}
+
+.game-btn:hover {
+  background: linear-gradient(135deg, #5a3a2a, #7a4a3a);
+  border-color: #f4d9a0;
+  box-shadow: 0 0 20px rgba(244, 217, 160, 0.3);
+  transform: scale(1.05);
+}
+
+#dialogueBox {
+  z-index: 50;
+}
+
+.dialogue-container {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 600px;
+  background: rgba(10, 10, 25, 0.92);
+  border: 2px solid #f4d9a044;
+  border-radius: 12px;
+  padding: 20px 24px;
+  z-index: 50;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+#dialogueText,
+.dialogue-text {
+  color: #ddd;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+#dialoguePrompt,
+.dialogue-prompt {
+  color: #f4d9a088;
+  font-size: 0.75rem;
+  text-align: right;
+  font-style: italic;
+}
+
+#letterOverlay {
+  background: rgba(10, 10, 18, 0.96);
+  z-index: 200;
+}
+
+.letter-content {
+  background: linear-gradient(135deg, #1a1420, #2a1a2a);
+  border: 2px solid #f4d9a044;
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 500px;
+  width: 85%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: fadeIn 1s ease;
+}
+
+.letter-header {
+  color: #f4d9a0;
+  font-size: 1.3rem;
+  text-align: center;
+  margin-bottom: 16px;
+  text-shadow: 0 0 15px rgba(244, 217, 160, 0.4);
+}
+
+#letterBody,
+.letter-body {
+  color: #ccbbaa;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  font-style: italic;
+  margin-bottom: 20px;
+  white-space: pre-wrap;
+}
+
+#closeLetterBtn {
+  display: block;
+  margin: 0 auto;
+}
+
+#fragmentCount {
+  color: #f4d9a0;
+  font-size: 1rem;
+  text-shadow: 0 0 10px rgba(244, 217, 160, 0.5);
+}
+
+#meowPrompt {
+  color: #aabbcc;
+  font-size: 0.8rem;
+}
+
+#interactPrompt {
+  position: absolute;
+  bottom: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f4d9a0;
+  font-size: 0.9rem;
+  text-shadow: 0 0 15px rgba(244, 217, 160, 0.5);
+  animation: pulse 1.5s ease infinite;
+  z-index: 40;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+#mobileControls {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 60;
+}
+
+.mobile-left, .mobile-right {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.mobile-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(244, 217, 160, 0.15);
+  border: 2px solid rgba(244, 217, 160, 0.3);
+  color: #f4d9a0;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.mobile-btn:active {
+  background: rgba(244, 217, 160, 0.35);
+  border-color: #f4d9a0;
+}
+
+#btnLeft, #btnRight {
+  width: 56px;
+  height: 56px;
+}
+
+#btnJump,
+.jump-btn {
+  width: 64px;
+  height: 64px;
+  font-size: 1.4rem;
+}
+
+#btnInteract,
+.interact-btn {
+  width: 56px;
+  height: 56px;
+  font-weight: bold;
+}
+
+#btnMeow,
+.meow-btn {
+  width: 56px;
+  height: 56px;
+}
+
+#reunionOverlay {
+  background: rgba(10, 10, 18, 0.0);
+  transition: background 3s ease;
+  z-index: 150;
+  pointer-events: none;
+}
+
+#reunionOverlay.active {
+  background: rgba(10, 10, 18, 0.7);
+}
+
+.reunion-content {
+  text-align: center;
+}
+
+#reunionText,
+.reunion-text {
+  color: #f4d9a0;
+  font-size: 1.4rem;
+  line-height: 2;
+  text-shadow: 0 0 20px rgba(244, 217, 160, 0.5);
+  animation: fadeIn 3s ease;
+}
+
+@media (max-width: 768px) {
+  .game-title { font-size: 2rem; }
+  .subtitle { font-size: 0.85rem; }
+  .dialogue-container { width: 90%; bottom: 18%; padding: 14px 16px; }
+  #dialogueText, .dialogue-text { font-size: 0.82rem; }
+  .letter-content { padding: 20px; }
+  #letterBody, .letter-body { font-size: 0.78rem; }
+  #fragmentCount { font-size: 0.85rem; }
+  #reunionText, .reunion-text { font-size: 1.1rem; }
+}
