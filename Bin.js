@@ -63,7 +63,9 @@ class Bin extends GameObject {
     const cx = this.x + this.width / 2;
     const cy = this.y + this.height / 2;
     ctx.translate(cx, cy);
-    ctx.scale(this.facing, 1);
+    // FIX: sprite is drawn facing LEFT by default (head at negative x),
+    // so facing right (1) needs a horizontal flip, facing left (-1) does not.
+    ctx.scale(-this.facing, 1);
 
     const walkBob = this.isWalking ? Math.sin(this.animFrame * Math.PI / 2) * 2 : 0;
 

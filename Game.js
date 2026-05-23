@@ -289,30 +289,36 @@ Bin 🐱`;
       });
     }
 
-    // Mobile controls
+    // FIX: always set up mobile controls — touch events work on any device,
+    // and the visibility is controlled separately by setupResize().
     this.setupMobileControls();
   }
 
   setupMobileControls() {
-    if (this.isMobile) {
-      document.getElementById('mobileControls').style.display = 'flex';
-    }
+    // FIX: bind touch events unconditionally so they work even if isMobile
+    // was false at construction time but becomes true after a resize.
+    const updateMobileVisibility = () => {
+      const show = 'ontouchstart' in window || window.innerWidth < 768;
+      document.getElementById('mobileControls').style.display = show ? 'flex' : 'none';
+    };
+    updateMobileVisibility();
 
     const addTouchEvents = (id, key) => {
       const btn = document.getElementById(id);
       if (!btn) return;
+      // Remove any previous listeners by cloning (safe for fresh setup)
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         this.mobileInput[key] = true;
-      });
+      }, { passive: false });
       btn.addEventListener('touchend', (e) => {
         e.preventDefault();
         this.mobileInput[key] = false;
-      });
+      }, { passive: false });
       btn.addEventListener('touchcancel', (e) => {
         e.preventDefault();
         this.mobileInput[key] = false;
-      });
+      }, { passive: false });
     };
 
     addTouchEvents('btnLeft', 'left');
@@ -324,7 +330,7 @@ Bin 🐱`;
       btnInteract.addEventListener('touchstart', (e) => {
         e.preventDefault();
         this.handleInteract();
-      });
+      }, { passive: false });
     }
 
     const btnMeow = document.getElementById('btnMeow');
@@ -332,7 +338,7 @@ Bin 🐱`;
       btnMeow.addEventListener('touchstart', (e) => {
         e.preventDefault();
         this.handleMeow();
-      });
+      }, { passive: false });
     }
   }
 
@@ -410,12 +416,9 @@ Bin 🐱`;
       if (r.width <= 0 || r.height <= 0) return;
       this.canvas.width = Math.floor(r.width * dpr);
       this.canvas.height = Math.floor(r.height * dpr);
+      // FIX: update isMobile and mobile controls visibility on every resize
       this.isMobile = 'ontouchstart' in window || window.innerWidth < 768;
-      if (this.isMobile) {
-        document.getElementById('mobileControls').style.display = 'flex';
-      } else {
-        document.getElementById('mobileControls').style.display = 'none';
-      }
+      document.getElementById('mobileControls').style.display = this.isMobile ? 'flex' : 'none';
     };
     window.addEventListener('resize', fit);
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(this.canvas);

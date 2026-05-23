@@ -60,9 +60,10 @@
   <script src="Lamp.js"></script>
   <script src="Game.js"></script>
   <script>
+    // FIX: only create the game — the constructor already calls start() internally.
+    // Calling game.start() again here caused a duplicate game loop.
     const game = new Game(document.getElementById('gameCanvas'));
     window.game = game;
-    game.start();
   </script>
 </body>
 </html>
