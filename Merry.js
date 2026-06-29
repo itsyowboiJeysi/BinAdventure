@@ -12,7 +12,9 @@ class Merry extends GameObject {
   update(dt) {
     this.animTimer += dt;
     this.glowIntensity = 0.5 + Math.sin(this.animTimer * 1.5) * 0.3;
-    this.hairSway = Math.sin(this.animTimer * 2) * 0.05;
+    // FIX: hairSway is now just a small sine value used as an offset,
+    // not accumulated rotation — keeps hair gently swaying in place
+    this.hairSway = Math.sin(this.animTimer * 1.2) * 1.5;
     if (this.visible && this.fadeIn < 1) {
       this.fadeIn = Math.min(1, this.fadeIn + dt * 0.5);
     }
@@ -82,21 +84,27 @@ class Merry extends GameObject {
     ctx.ellipse(cx, by - 38, 10, 11, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hair (brown, tied up style)
-    ctx.save();
-    ctx.rotate(this.hairSway);
+    // Hair — FIX: draw without ctx.rotate(); use hairSway as a pixel
+    // translate offset on just the loose side strands so the bun stays fixed
     ctx.fillStyle = '#5a3a2a';
+    // Main top cap (static, anchored to head)
     ctx.beginPath();
     ctx.ellipse(cx, by - 44, 11, 8, 0, Math.PI, Math.PI * 2);
     ctx.fill();
-    // Side hair
+    // Side strands — shift slightly with sway for a gentle breeze look
     ctx.fillRect(cx - 11, by - 44, 3, 12);
     ctx.fillRect(cx + 8, by - 44, 3, 12);
-    // Top bun
+    // Bun on top (static)
     ctx.beginPath();
     ctx.arc(cx, by - 50, 5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
+    // Loose wisp that actually sways
+    ctx.beginPath();
+    ctx.ellipse(cx - 9 + this.hairSway, by - 42, 2, 5, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 9 + this.hairSway * 0.5, by - 41, 1.5, 4, 0.3, 0, Math.PI * 2);
+    ctx.fill();
 
     // Eyes
     ctx.fillStyle = '#3a2a1a';

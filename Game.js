@@ -112,6 +112,10 @@ Bin 🐱`;
     this.merry = new Merry(2950, this.groundY - 52);
     this.entities.push(this.merry);
 
+    // Create Jeysi (standing beside Merry at the end)
+    this.jeysi = new Jeysi(2990, this.groundY - 52);
+    this.entities.push(this.jeysi);
+
     // Ground platforms
     this.platforms = [];
     this.addPlatform(0, this.groundY, 800, 140, 'ground');
@@ -260,6 +264,16 @@ Bin 🐱`;
       if (e.code === 'KeyQ') {
         this.handleMeow();
       }
+      if (e.code === 'KeyR' && this.state === 'gameover') {
+        this.restartGame();
+      }
+    });
+
+    // Tap to restart on game over
+    this.canvas.addEventListener('pointerup', () => {
+      if (this.state === 'gameover' && (this.gameOverTimer || 0) > 1.2) {
+        this.restartGame();
+      }
     });
     window.addEventListener('keyup', (e) => {
       this.keys[e.code] = false;
@@ -306,7 +320,6 @@ Bin 🐱`;
     const addTouchEvents = (id, key) => {
       const btn = document.getElementById(id);
       if (!btn) return;
-      // Remove any previous listeners by cloning (safe for fresh setup)
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         this.mobileInput[key] = true;
@@ -414,12 +427,19 @@ Bin 🐱`;
       const dpr = window.devicePixelRatio || 1;
       const r = this.canvas.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0) return;
-      this.canvas.width = Math.floor(r.width * dpr);
-      this.canvas.height = Math.floor(r.height * dpr);
-      // FIX: update isMobile and mobile controls visibility on every resize
+      // Store CSS pixel dimensions for game logic (camera, clamping, etc.)
+      this.viewWidth = Math.floor(r.width);
+      this.viewHeight = Math.floor(r.height);
+      // Scale canvas backing store for sharpness on HiDPI screens
+      this.canvas.width = this.viewWidth * dpr;
+      this.canvas.height = this.viewHeight * dpr;
+      this.dpr = dpr;
       this.isMobile = 'ontouchstart' in window || window.innerWidth < 768;
       document.getElementById('mobileControls').style.display = this.isMobile ? 'flex' : 'none';
     };
+    this.viewWidth = this.canvas.clientWidth || 800;
+    this.viewHeight = this.canvas.clientHeight || 500;
+    this.dpr = 1;
     window.addEventListener('resize', fit);
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(this.canvas);
     fit();
@@ -449,6 +469,12 @@ Bin 🐱`;
     if (dt > 0.1) dt = 0.1;
 
     if (this.state === 'title') return;
+    if (this.state === 'gameover') {
+      this.gameOverTimer = (this.gameOverTimer || 0) + dt;
+      this.player.update(dt); // let them keep falling visually
+      this.updateCamera(dt);
+      return;
+    }
     if (this.state !== 'playing' && this.state !== 'reunion') return;
 
     // Update dialogue typewriter
@@ -499,13 +525,14 @@ Bin 🐱`;
       }
     }
 
-    // Keep player in bounds
+    // Keep player in bounds horizontally
     if (this.player.x < 0) this.player.x = 0;
     if (this.player.x > this.worldWidth - this.player.width) this.player.x = this.worldWidth - this.player.width;
-    if (this.player.y > this.groundY + 100) {
-      this.player.y = this.groundY - this.player.height;
-      this.player.vy = 0;
-      this.player.grounded = true;
+
+    // Game over if player falls off the world
+    if (this.player.y > this.groundY + 200) {
+      this.triggerGameOver();
+      return;
     }
 
     // Check interactions
@@ -570,8 +597,8 @@ Bin 🐱`;
   }
 
   updateCamera(dt) {
-    const cw = this.canvas.width;
-    const ch = this.canvas.height;
+    const cw = this.viewWidth;
+    const ch = this.viewHeight;
     this.cameraTargetX = this.player.x + this.player.width / 2 - cw / 2;
     this.cameraTargetY = this.player.y + this.player.height / 2 - ch / 2 + 50;
 
@@ -617,18 +644,77 @@ Bin 🐱`;
     }
   }
 
-  triggerReunion() {
+  restartGame() {
+    // Reset player position and state
+    this.player.x = 120;
+    this.player.y = this.groundY - this.player.height;
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.player.grounded = true;
+
+    // Reset game state
+    this.state = 'playing';
+    this.gameOverTimer = 0;
+    this.cameraX = 0;
+    this.cameraY = 0;
+
+    // Reset collectibles
+    this.fragmentsCollected = 0;
+    document.getElementById('fragmentCount').textContent = `✦ 0 / ${this.totalFragments}`;
+
+    // Reset all memory spots and fragments
+    for (let m of this.memorySpots) m.collected = false;
+    for (let f of this.fragments) f.collected = false;
+
+    // Reset reunion
+    this.reunionTriggered = false;
+    this.reunionTimer = 0;
+    this.endingPhase = 0;
+    this.rainIntensity = 1.0;
+    this.merry.visible = false;
+    this.merry.fadeIn = 0;
+    this.jeysi.visible = false;
+    this.jeysi.fadeIn = 0;
+
+    // Hide overlays
+    document.getElementById('dialogueBox').style.display = 'none';
+    document.getElementById('reunionOverlay').style.display = 'none';
+    document.getElementById('reunionOverlay').classList.remove('active');
+    document.getElementById('reunionText').innerHTML = '';
+    this.dialogueActive = false;
+    this.dialogueQueue = [];
+
+    // Opening dialogue again
+    this.showDialogue([
+      "*The rain falls softly on the empty streets...*",
+      "Bin opens his eyes. The night is cold.",
+      "Somewhere out there, Merrylou is waiting.",
+      "He has to find her."
+    ]);
+  }
+
+  triggerGameOver() {
+    this.state = 'gameover';
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.gameOverTimer = 0;
+    document.getElementById('dialogueBox').style.display = 'none';
+    document.getElementById('interactPrompt').style.display = 'none';
+  }
+
+    triggerReunion() {
     this.reunionTriggered = true;
     this.state = 'reunion';
     this.reunionTimer = 0;
     this.endingPhase = 0;
     this.merry.visible = true;
+    this.jeysi.visible = true;
     this.player.vx = 0;
     document.getElementById('interactPrompt').style.display = 'none';
   }
 
   updateReunion(dt) {
-    // Slow walk to Merry
+    // Slow walk to Merry & Jeysi
     if (this.endingPhase === 0) {
       if (this.player.x < 2920) {
         this.player.vx = 40;
@@ -654,8 +740,10 @@ Bin 🐱`;
       this.endingPhase = 3;
       document.getElementById('reunionText').innerHTML =
         `<p style="margin-bottom:16px;">Bin found Merrylou.</p>
-         <p style="margin-bottom:16px; opacity:0.8;">Under the warm glow of the streetlights,</p>
-         <p style="margin-bottom:16px; opacity:0.7;">the rain slowly faded away.</p>
+         <p style="margin-bottom:16px; opacity:0.85;">And beside her stood Jeysi,</p>
+         <p style="margin-bottom:16px; opacity:0.75;">waving with that bright, familiar smile.</p>
+         <p style="margin-bottom:16px; opacity:0.7;">Under the warm glow of the streetlights,</p>
+         <p style="margin-bottom:16px; opacity:0.65;">the rain slowly faded away.</p>
          <p style="margin-bottom:24px; opacity:0.6;">And for the first time tonight,</p>
          <p style="font-size:1.6rem; margin-bottom:32px;">everything felt like home.</p>
          <p style="opacity:0.5; font-size:0.9rem; margin-top: 20px;">✦ Fragments collected: ${this.fragmentsCollected} / ${this.totalFragments} ✦</p>`;
@@ -667,8 +755,11 @@ Bin 🐱`;
 
   draw() {
     this.ctx.save();
-    const cw = this.canvas.width;
-    const ch = this.canvas.height;
+    // Scale context so all drawing uses CSS pixels — fixes floating ground on HiDPI screens
+    const dpr = this.dpr || 1;
+    this.ctx.scale(dpr, dpr);
+    const cw = this.viewWidth;
+    const ch = this.viewHeight;
 
     // Clear
     this.ctx.fillStyle = '#0a0a18';
@@ -724,6 +815,9 @@ Bin 🐱`;
     // Draw Merry
     this.merry.draw(this.ctx);
 
+    // Draw Jeysi
+    this.jeysi.draw(this.ctx);
+
     // Draw player
     this.player.draw(this.ctx);
 
@@ -751,12 +845,52 @@ Bin 🐱`;
     // Vignette
     this.drawVignette();
 
+    // Game over overlay (drawn on top of everything)
+    if (this.state === 'gameover') {
+      this.drawGameOver();
+    }
+
+    this.ctx.restore();
+  }
+
+  drawGameOver() {
+    const cw = this.viewWidth;
+    const ch = this.viewHeight;
+    const t = Math.min(1, (this.gameOverTimer || 0) / 1.2);
+
+    // Dark fade
+    this.ctx.fillStyle = `rgba(5, 5, 15, ${t * 0.82})`;
+    this.ctx.fillRect(0, 0, cw, ch);
+
+    if (t < 0.5) return; // wait for fade before showing text
+    const textAlpha = Math.min(1, (t - 0.5) / 0.5);
+
+    // "You fell..." text
+    this.ctx.save();
+    this.ctx.globalAlpha = textAlpha;
+    this.ctx.textAlign = 'center';
+
+    this.ctx.font = 'italic 1.4rem Georgia, serif';
+    this.ctx.fillStyle = '#8899aa';
+    this.ctx.fillText('You fell into the dark...', cw / 2, ch / 2 - 48);
+
+    this.ctx.font = 'bold 2.6rem Georgia, serif';
+    this.ctx.fillStyle = '#f4d9a0';
+    this.ctx.shadowColor = 'rgba(244, 217, 160, 0.4)';
+    this.ctx.shadowBlur = 20;
+    this.ctx.fillText('Game Over', cw / 2, ch / 2 + 8);
+    this.ctx.shadowBlur = 0;
+
+    this.ctx.font = 'italic 0.95rem Georgia, serif';
+    this.ctx.fillStyle = 'rgba(244, 217, 160, 0.55)';
+    this.ctx.fillText('Press R or tap to try again', cw / 2, ch / 2 + 52);
+
     this.ctx.restore();
   }
 
   drawTitleBackground() {
-    const cw = this.canvas.width;
-    const ch = this.canvas.height;
+    const cw = this.viewWidth;
+    const ch = this.viewHeight;
     const time = Date.now() * 0.001;
 
     // Soft animated background
@@ -789,8 +923,8 @@ Bin 🐱`;
   }
 
   drawFarBuildings() {
-    const cw = this.canvas.width;
-    const ch = this.canvas.height;
+    const cw = this.viewWidth;
+    const ch = this.viewHeight;
     const parallax = this.cameraX * 0.3;
 
     this.ctx.fillStyle = '#0e0e1e';
@@ -858,8 +992,8 @@ Bin 🐱`;
   }
 
   drawVignette() {
-    const cw = this.canvas.width;
-    const ch = this.canvas.height;
+    const cw = this.viewWidth;
+    const ch = this.viewHeight;
     const grd = this.ctx.createRadialGradient(cw / 2, ch / 2, cw * 0.25, cw / 2, ch / 2, cw * 0.7);
     grd.addColorStop(0, 'rgba(0,0,0,0)');
     grd.addColorStop(1, 'rgba(0,0,0,0.5)');
